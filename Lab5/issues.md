@@ -1,0 +1,12 @@
+# Static Code Analysis Identified Issues
+
+| Issue | Type | Line(s) | Description | Fix Approach |
+|-------|------|---------|-------------|--------------|
+| Hardcoded SQL String Formatting (`B608` / `C0209`) | Security (Medium/High) | 10 | `INSERT INTO songs` query uses `%` string interpolation (`VALUES ('%s', '%s', %d)`), creating a SQL injection vulnerability. | Use parameterized SQL queries with `?` placeholders: `VALUES (?, ?, ?)` and pass `(title, artist, plays)` as a tuple. |
+| Untrusted Deserialization via `pickle` (`B301` / `B403`) | Security (Medium/Low) | 1, 29, 33 | Importing `pickle` and using `pickle.dumps()` / `pickle.loads()` allows arbitrary code execution if untrusted data is deserialized. | Replace `pickle` with the safe `json` module (`json.dumps` and `json.loads`). |
+| Non-Cryptographic PRNG (`B311`) | Security (Low) | 2, 17 | `random.choice(ids)` in `shufflePick()` uses a standard pseudo-random generator flagged by Bandit. | Replace `random` with the `secrets` module and call `secrets.choice(ids)`. |
+| Mutable Default Argument (`W0102`) | Bug / Logic | 9 | `playlist=[]` in `addSong()` shares the same default list across multiple calls when `playlist` is omitted. | Change the default parameter to `playlist=None` and initialize `if playlist is None: playlist = []` inside the function. |
+| Bare `except:` Clause (`W0702` / `E722`) | Bug / Exception Handling | 39 | `except:` in `totalPlays()` catches all exceptions including `SystemExit` and `KeyboardInterrupt`, masking unexpected errors. | Catch the specific database exception: `except sqlite3.Error:`. |
+| Unnecessary `else` After `return` (`R1705`) | Code Quality / Refactor | 22-25 | `popularity()` uses an `else:` block immediately after `if row is None: return "unknown"`. | Remove the `else:` keyword and unindent the final `return` statement. |
+| Ambiguous Variable & Single-Line Statement (`E741`, `E701`, `C0321`) | Style / Readability | 47-48 | Variable `l` is ambiguous (looks like `1` or `I`), and `if len(l) > 1: print(...)` puts multiple statements on one line. | Rename `l` to `loaded_playlist` and move `print("multi-song playlist")` onto an indented new line. |
+| PEP 8 Naming, Line Length & Docstrings (`C0103`, `C0114`, `C0116`, `E501`) | Style / Convention | 6, 9, 10, 15, 20, 21, 28, 32, 36, 43, 49 | Functions use `camelCase` instead of `snake_case`, lines exceed 79 characters, and module/function docstrings are missing. | Rename functions to `snake_case`, wrap lines under 79 characters, and add docstrings to the module and all functions. |
